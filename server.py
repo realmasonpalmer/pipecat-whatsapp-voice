@@ -29,6 +29,7 @@ Usage:
 
 import argparse
 import asyncio
+import os
 import signal
 import sys
 from contextlib import asynccontextmanager
@@ -279,10 +280,10 @@ if __name__ == "__main__":
         description="WhatsApp WebRTC Bot Server - Handles WhatsApp webhooks and WebRTC connections"
     )
     parser.add_argument(
-        "--host", default="localhost", help="Host for HTTP server (default: localhost)"
+        "--host", default=os.environ.get("HOST", "0.0.0.0"), help="Host for HTTP server (default: from HOST env or 0.0.0.0)"
     )
     parser.add_argument(
-        "--port", type=int, default=7860, help="Port for HTTP server (default: 7860)"
+        "--port", type=int, default=int(os.environ.get("PORT", 7860)), help="Port for HTTP server (default: from PORT env or 7860)"
     )
     parser.add_argument("--verbose", "-v", action="count")
     args = parser.parse_args()
