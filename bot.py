@@ -11,8 +11,11 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMUserAggregatorParams,
 )
 from pipecat.services.openai import OpenAILLMService
-from pipecat.transports.base_transport import TransportParams
-from pipecat.transports.twilio import TwilioTransport
+from pipecat.transports.network.fastapi_websocket import (
+    FastAPIWebsocketTransport,
+    FastAPIWebsocketParams,
+)
+from pipecat.serializers.twilio import TwilioFrameSerializer
 
 load_dotenv()
 
@@ -20,14 +23,15 @@ SYSTEM_INSTRUCTION = """You are Archie — Mason's autonomous operations control
 Keep responses SHORT — max 2 sentences. Voice-first. No markdown.
 Always end with: DONE, BLOCKED, or NEEDS APPROVAL."""
 
-async def run_bot():
-    transport = TwilioTransport(
-        account_sid=os.getenv("TWILIO_ACCOUNT_SID"),
-        auth_token=os.getenv("TWILIO_AUTH_TOKEN"),
-        from_number=os.getenv("TWILIO_PHONE_NUMBER"),
-        params=TransportParams(
+async def run_bot(websocket, stream_sid):
+    transport = FastAPIWebsocketTransport(
+        websocket=websocket,
+        params=FastAPIWebsocketParams(
             audio_in_enabled=True,
             audio_out_enabled=True,
+            add_wav_header=False,
+            vad_analyzer=SileroVADAnalyzer(),
+            serializer=TwilioFrameSerializer(stream_sid=stream_sid),
         ),
     )
 

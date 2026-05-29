@@ -1,10 +1,8 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
-from twilio.twiml.voice_response import VoiceResponse
+from fastapi import FastAPI, Request, WebSocket
+from twilio.twiml.voice_response import VoiceResponse, Stream
 from loguru import logger
-from bot import run_bot
-import asyncio
 
 load_dotenv()
 
@@ -17,27 +15,54 @@ app = FastAPI(title="Twilio WhatsApp Voice Bot")
 @app.post("/twilio")
 async def twilio_voice_webhook(request: Request):
     """Handle incoming Twilio voice calls."""
-    form_data = await request.form()
-    call_sid = form_data.get("CallSid")
-    logger.info(f"Incoming call: {call_sid}")
+    try:
+        form_data = await request.form()
+        call_sid = form_data.get("CallSid")
+        logger.info(f"Incoming call: {call_sid}")
 
-    response = VoiceResponse()
-    # Connect call to bot via media stream
-    stream_url = f"wss://{request.url.hostname}/twilio/stream?call_sid={call_sid}"
-    response.connect().stream(url=stream_url)
-    return str(response)
+        response = VoiceResponse()
+        # Connect call to media stream
+        stream = Stream(url=f"wss://{request.url.hostname}/twilio/stream/{call_sid}")
+        response.append(stream)
+        return str(response)
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return str(VoiceResponse())
 
-@app.websocket("/twilio/stream")
-async def twilio_stream(websocket):
+@app.websocket("/twilio/stream/{call_sid}")
+async def twilio_stream(websocket: WebSocket, call_sid: str):
     """Handle Twilio Media Stream WebSocket."""
     await websocket.accept()
-    logger.info("WebSocket connected for Twilio Media Stream")
+    logger.info(f"WebSocket connected for call: {call_sid}")
+
+    # Extract stream SID from first Twilio message
+    stream_sid = None
     try:
-        await run_bot()
+        data = await websocket.receive_json()
+        if data.get("event") == "connected":
+            logger.info(f"Stream connected: {data}")
+        elif data.get("event") == "start":
+            stream_sid = data.get("start", {}).get("streamSid")
+            logger.info(f"Stream started: {stream_sid}")
+    except Exception as e:
+        logger.error(f"Failed to get stream SID: {e}")
+        await websocket.close()
+        return
+
+    if not stream_sid:
+        logger.error("No stream SID received")
+        await websocket.close()
+        return
+
+    # Run bot with this WebSocket and stream SID
+    from bot import run_bot
+    try:
+        await run_bot(websocket, stream_sid)
     except Exception as e:
         logger.error(f"Bot failed: {e}")
     finally:
         await websocket.close()
+        logger.info(f"WebSocket closed for call: {call_sid}")
 
 if __name__ == "__main__":
     import uvicorn

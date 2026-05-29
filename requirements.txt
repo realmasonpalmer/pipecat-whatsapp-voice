@@ -1,4 +1,4 @@
-pipecat-ai[twilio]<=0.0.103
+pipecat-ai<=0.0.103
 fastapi
 uvicorn
 python-dotenv
@@ -6,3 +6,4 @@ twilio
 openai
 loguru
 websockets
+aiohttp
