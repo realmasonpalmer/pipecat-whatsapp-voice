@@ -13,7 +13,9 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
 )
-from pipecat.services.openai import OpenAILLMService, OpenAISTTService, OpenAITTSService
+from pipecat.services.openai.llm import OpenAILLMService
+from pipecat.services.openai.stt import OpenAISTTService
+from pipecat.services.openai.tts import OpenAITTSService
 from pipecat.transports.network.fastapi_websocket import (
     FastAPIWebsocketTransport,
     FastAPIWebsocketParams,
@@ -21,6 +23,9 @@ from pipecat.transports.network.fastapi_websocket import (
 from pipecat.serializers.twilio import TwilioFrameSerializer
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    logger.error("OPENAI_API_KEY not set")
+    raise ValueError("OPENAI_API_KEY required")
 
 SYSTEM_INSTRUCTION = """You are Archie — Mason's autonomous operations controller.
 Keep responses SHORT — max 2 sentences. Voice-first. No markdown.
@@ -40,11 +45,14 @@ async def run_bot(websocket, stream_sid):
         ),
     )
 
+    # LLM via OpenAI directly
     llm = OpenAILLMService(
         api_key=OPENAI_API_KEY,
         model="gpt-4o-mini",
+        system_prompt=SYSTEM_INSTRUCTION,
     )
 
+    # STT and TTS via OpenAI
     stt = OpenAISTTService(api_key=OPENAI_API_KEY, model="whisper-1")
     tts = OpenAITTSService(api_key=OPENAI_API_KEY, model="tts-1")
 
