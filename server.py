@@ -15,20 +15,17 @@ app = FastAPI(title="Twilio WhatsApp Voice Bot")
 @app.post("/TWILIO")
 async def twilio_voice_webhook(request: Request):
     """Handle incoming Twilio voice calls."""
-    try:
-        form_data = await request.form()
-        call_sid = form_data.get("CallSid")
-        logger.info(f"Incoming call: {call_sid}")
-
-        response = VoiceResponse()
-        connect = response.connect()
-        stream = connect.stream(url=f"wss://{request.url.hostname}/TWILIO/stream/{call_sid}")
-        # Return XML with proper content type
-        return Response(content=str(response), media_type="application/xml")
-    except Exception as e:
-        logger.error(f"Webhook error: {e}")
-        response = VoiceResponse()
-        return Response(content=str(response), media_type="application/xml")
+    form_data = await request.form()
+    call_sid = form_data.get("CallSid", "unknown")
+    logger.info(f"Incoming call: {call_sid}")
+    hostname = request.url.hostname
+    stream_url = f"wss://{hostname}/TWILIO/stream/{call_sid}"
+    response = VoiceResponse()
+    connect = response.connect()
+    connect.stream(url=stream_url)
+    xml = str(response)
+    logger.info(f"TwiML: {xml}")
+    return Response(content=xml, media_type="application/xml")
 
 @app.websocket("/TWILIO/stream/{call_sid}")
 async def twilio_stream(websocket: WebSocket, call_sid: str):
