@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["sh", "-c", "python server.py --host 0.0.0.0 --port ${PORT:-7860}"]
+CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-7860}"]
