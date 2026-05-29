@@ -1,0 +1,6 @@
+pipecat-ai[webrtc]<=0.0.103
+    fastapi
+    uvicorn
+    python-dotenv
+    twilio
+    openai
