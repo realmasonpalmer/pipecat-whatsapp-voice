@@ -7,3 +7,4 @@ openai
 loguru
 websockets
 aiohttp
+python-multipart
