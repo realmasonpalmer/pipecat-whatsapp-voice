@@ -56,17 +56,7 @@ WHATSAPP_WEBHOOK_VERIFICATION_TOKEN = os.getenv("WHATSAPP_WEBHOOK_VERIFICATION_T
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
 
 # Validate required environment variables
-if not all([WHATSAPP_TOKEN, WHATSAPP_WEBHOOK_VERIFICATION_TOKEN, WHATSAPP_PHONE_NUMBER_ID]):
-    missing_vars = [
-        var
-        for var, val in [
-            ("WHATSAPP_TOKEN", WHATSAPP_TOKEN),
-            ("WHATSAPP_WEBHOOK_VERIFICATION_TOKEN", WHATSAPP_WEBHOOK_VERIFICATION_TOKEN),
-            ("WHATSAPP_PHONE_NUMBER_ID", WHATSAPP_PHONE_NUMBER_ID),
-        ]
-        if not val
-    ]
-    raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+# Twilio setup - no Meta WhatsApp variables needed
 
 # Global state
 whatsapp_client: Optional[WhatsAppClient] = None
