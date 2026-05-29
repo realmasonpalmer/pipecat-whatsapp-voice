@@ -35,14 +35,18 @@ async def twilio_stream(websocket: WebSocket, call_sid: str):
         for _ in range(50):  # ~5 seconds timeout
             data = await asyncio.wait_for(websocket.receive_json(), timeout=0.1)
             event = data.get("event")
-            logger.debug(f"Twilio event: {event}")
+            logger.info(f"Twilio event received: {event}, full data: {data}")
 
             if event == "connected":
                 logger.info(f"Stream connected event for {call_sid}")
             elif event == "start":
-                stream_sid = data.get("start", {}).get("streamSid")
-                logger.info(f"Stream started, stream_sid: {stream_sid}")
-                break
+                start_data = data.get("start", {})
+                stream_sid = start_data.get("streamSid")
+                logger.info(f"Start event: stream_sid={stream_sid}, start_data={start_data}")
+                if stream_sid:
+                    break
+                else:
+                    logger.warning("Start event missing streamSid")
     except asyncio.TimeoutError:
         logger.warning("Timeout waiting for start event")
     except Exception as e:
