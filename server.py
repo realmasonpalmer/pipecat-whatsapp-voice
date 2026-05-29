@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, Request, WebSocket, Response
 from twilio.twiml.voice_response import VoiceResponse, Stream
 from loguru import logger
 
@@ -21,13 +21,14 @@ async def twilio_voice_webhook(request: Request):
         logger.info(f"Incoming call: {call_sid}")
 
         response = VoiceResponse()
-        # Connect call to media stream
-        stream = Stream(url=f"wss://{request.url.hostname}/TWILIO/stream/{call_sid}")
-        response.append(stream)
-        return str(response)
+        connect = response.connect()
+        stream = connect.stream(url=f"wss://{request.url.hostname}/TWILIO/stream/{call_sid}")
+        # Return XML with proper content type
+        return Response(content=str(response), media_type="application/xml")
     except Exception as e:
         logger.error(f"Webhook error: {e}")
-        return str(VoiceResponse())
+        response = VoiceResponse()
+        return Response(content=str(response), media_type="application/xml")
 
 @app.websocket("/TWILIO/stream/{call_sid}")
 async def twilio_stream(websocket: WebSocket, call_sid: str):
