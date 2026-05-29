@@ -12,7 +12,7 @@ TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
 
 app = FastAPI(title="Twilio WhatsApp Voice Bot")
 
-@app.post("/twilio")
+@app.post("/TWILIO")
 async def twilio_voice_webhook(request: Request):
     """Handle incoming Twilio voice calls."""
     try:
@@ -22,14 +22,14 @@ async def twilio_voice_webhook(request: Request):
 
         response = VoiceResponse()
         # Connect call to media stream
-        stream = Stream(url=f"wss://{request.url.hostname}/twilio/stream/{call_sid}")
+        stream = Stream(url=f"wss://{request.url.hostname}/TWILIO/stream/{call_sid}")
         response.append(stream)
         return str(response)
     except Exception as e:
         logger.error(f"Webhook error: {e}")
         return str(VoiceResponse())
 
-@app.websocket("/twilio/stream/{call_sid}")
+@app.websocket("/TWILIO/stream/{call_sid}")
 async def twilio_stream(websocket: WebSocket, call_sid: str):
     """Handle Twilio Media Stream WebSocket."""
     await websocket.accept()
