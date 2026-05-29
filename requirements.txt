@@ -4,3 +4,4 @@ uvicorn
 python-dotenv
 twilio
 openai
+websockets
