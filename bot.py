@@ -13,21 +13,14 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
 )
-from pipecat.services.openai import OpenAILLMService
+from pipecat.services.openai import OpenAILLMService, OpenAISTTService, OpenAITTSService
 from pipecat.transports.network.fastapi_websocket import (
     FastAPIWebsocketTransport,
     FastAPIWebsocketParams,
 )
 from pipecat.serializers.twilio import TwilioFrameSerializer
 
-# Optional STT/TTS - import if keys exist
-DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-CARTESIA_API_KEY = os.getenv("CARTESIA_API_KEY")
-
-if DEEPGRAM_API_KEY:
-    from pipecat.services.deepgram import DeepgramSTTService
-if CARTESIA_API_KEY:
-    from pipecat.services.cartesia import CartesiaTTSService
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 SYSTEM_INSTRUCTION = """You are Archie — Mason's autonomous operations controller.
 Keep responses SHORT — max 2 sentences. Voice-first. No markdown.
@@ -48,43 +41,32 @@ async def run_bot(websocket, stream_sid):
     )
 
     llm = OpenAILLMService(
-        api_key=os.getenv("OPENROUTER_API_KEY"),
-        model="openai/gpt-4o-mini",
-        base_url="https://openrouter.ai/api/v1",
-        system_prompt=SYSTEM_INSTRUCTION,
+        api_key=OPENAI_API_KEY,
+        model="gpt-4o-mini",
     )
 
-    # Build pipeline parts
-    pipeline_parts = [transport.input()]
+    stt = OpenAISTTService(api_key=OPENAI_API_KEY, model="whisper-1")
+    tts = OpenAITTSService(api_key=OPENAI_API_KEY, model="tts-1")
 
-    # STT
-    if DEEPGRAM_API_KEY:
-        stt = DeepgramSTTService(api_key=DEEPGRAM_API_KEY)
-        pipeline_parts.append(stt)
-        logger.info("Deepgram STT enabled")
-    else:
-        logger.warning("No DEEPGRAM_API_KEY, STT disabled")
+    context = LLMContext([
+        {"role": "user", "content": "Start by greeting Mason warmly as Archie."}
+    ])
 
-    # User aggregator
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
-        LLMContext([{"role": "user", "content": "Start by greeting Mason warmly as Archie."}]),
+        context,
         user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
     )
-    pipeline_parts.extend([user_aggregator, llm])
-
-    # TTS
-    if CARTESIA_API_KEY:
-        tts = CartesiaTTSService(api_key=CARTESIA_API_KEY, voice_id="71a7ad14-091c-4e8e-a314-022ece01c121")
-        pipeline_parts.append(tts)
-        logger.info("Cartesia TTS enabled")
-    else:
-        logger.warning("No CARTESIA_API_KEY, TTS disabled")
-
-    # Output and assistant aggregator
-    pipeline_parts.extend([transport.output(), assistant_aggregator])
 
     from pipecat.pipeline.pipeline import Pipeline
-    pipeline = Pipeline(pipeline_parts)
+    pipeline = Pipeline([
+        transport.input(),
+        stt,
+        user_aggregator,
+        llm,
+        tts,
+        transport.output(),
+        assistant_aggregator,
+    ])
 
     worker = PipelineWorker(pipeline, params={"enable_metrics": True, "enable_usage_metrics": True})
 
