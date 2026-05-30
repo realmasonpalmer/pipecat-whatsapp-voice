@@ -59,7 +59,7 @@ async def run_bot(websocket, stream_sid, call_sid):
 
     # STT and TTS via OpenAI
     stt = OpenAISTTService(api_key=OPENAI_API_KEY, model="whisper-1")
-    tts = OpenAITTSService(api_key=OPENAI_API_KEY, model="tts-1")
+    tts = OpenAITTSService(api_key=OPENAI_API_KEY, model="tts-1", sample_rate=24000)
 
     context = LLMContext([
         {"role": "user", "content": "Start by greeting Mason warmly as Archie."}
@@ -81,7 +81,6 @@ async def run_bot(websocket, stream_sid, call_sid):
         assistant_aggregator,
     ])
     worker = PipelineWorker(pipeline, params=PipelineParams(
-        audio_in_sample_rate=8000,
         audio_out_sample_rate=8000,
         enable_metrics=True,
         enable_usage_metrics=True,
