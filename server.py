@@ -62,7 +62,7 @@ async def twilio_stream(websocket: WebSocket, call_sid: str):
     logger.info(f"Starting bot for stream: {stream_sid}")
     from bot import run_bot
     try:
-        await run_bot(websocket, stream_sid)
+        await run_bot(websocket, stream_sid, call_sid)
     except Exception as e:
         logger.error(f"Bot failed: {e}")
     finally:

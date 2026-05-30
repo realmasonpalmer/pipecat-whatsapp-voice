@@ -31,7 +31,7 @@ SYSTEM_INSTRUCTION = """You are Archie — Mason's autonomous operations control
 Keep responses SHORT — max 2 sentences. Voice-first. No markdown.
 Always end with: DONE, BLOCKED, or NEEDS APPROVAL."""
 
-async def run_bot(websocket, stream_sid):
+async def run_bot(websocket, stream_sid, call_sid):
     transport = FastAPIWebsocketTransport(
         websocket=websocket,
         params=FastAPIWebsocketParams(
@@ -39,7 +39,12 @@ async def run_bot(websocket, stream_sid):
             audio_out_enabled=True,
             add_wav_header=False,
             vad_analyzer=SileroVADAnalyzer(),
-            serializer=TwilioFrameSerializer(stream_sid=stream_sid),
+            serializer=TwilioFrameSerializer(
+                stream_sid=stream_sid,
+                call_sid=call_sid,
+                account_sid=os.environ["TWILIO_ACCOUNT_SID"],
+                auth_token=os.environ["TWILIO_AUTH_TOKEN"],
+            ),
             audio_in_sample_rate=8000,
             audio_out_sample_rate=8000,
         ),
