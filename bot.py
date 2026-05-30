@@ -80,7 +80,12 @@ async def run_bot(websocket, stream_sid, call_sid):
         transport.output(),
         assistant_aggregator,
     ])
-    worker = PipelineWorker(pipeline, params=PipelineParams(enable_metrics=True, enable_usage_metrics=True))
+    worker = PipelineWorker(pipeline, params=PipelineParams(
+        audio_in_sample_rate=8000,
+        audio_out_sample_rate=8000,
+        enable_metrics=True,
+        enable_usage_metrics=True,
+    ))
     runner = WorkerRunner(handle_sigint=False)
     await runner.add_workers(worker)
 

@@ -66,7 +66,10 @@ async def twilio_stream(websocket: WebSocket, call_sid: str):
     except Exception as e:
         logger.error(f"Bot failed: {e}")
     finally:
-        await websocket.close()
+        try:
+            await websocket.close()
+        except Exception:
+            pass  # Transport already closed it
         logger.info(f"WebSocket closed for call: {call_sid}")
 
 if __name__ == "__main__":
