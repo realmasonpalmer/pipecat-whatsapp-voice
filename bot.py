@@ -6,7 +6,7 @@ load_dotenv()
 
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.frames.frames import LLMRunFrame
-from pipecat.pipeline.worker import PipelineWorker
+from pipecat.pipeline.worker import PipelineWorker, PipelineParams
 from pipecat.workers.runner import WorkerRunner
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.aggregators.llm_response_universal import (
@@ -80,7 +80,7 @@ async def run_bot(websocket, stream_sid, call_sid):
         transport.output(),
         assistant_aggregator,
     ])
-    worker = PipelineWorker(pipeline, params={"enable_metrics": True, "enable_usage_metrics": True})
+    worker = PipelineWorker(pipeline, params=PipelineParams(enable_metrics=True, enable_usage_metrics=True))
     runner = WorkerRunner(handle_sigint=False)
     await runner.add_workers(worker)
 
