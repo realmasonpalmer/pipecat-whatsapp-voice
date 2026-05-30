@@ -80,8 +80,9 @@ async def run_bot(websocket, stream_sid, call_sid):
         transport.output(),
         assistant_aggregator,
     ])
-
     worker = PipelineWorker(pipeline, params={"enable_metrics": True, "enable_usage_metrics": True})
+    runner = WorkerRunner(handle_sigint=False)
+    await runner.add_workers(worker)
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
@@ -89,7 +90,6 @@ async def run_bot(websocket, stream_sid, call_sid):
 
     @transport.event_handler("on_client_disconnected")
     async def on_client_disconnected(transport, client):
-        await worker.cancel()
+        await runner.cancel()
 
-    runner = WorkerRunner(handle_sigint=False)
-    await runner.add_workers(worker)
+    await runner.run()
